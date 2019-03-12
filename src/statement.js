@@ -29,7 +29,7 @@ function statement (invoice, plays) {
         { style: "currency", currency: "USD",
             minimumFractionDigits: 2 }).format;
     for (let perf of invoice.performances) {
-        const play = plays[perf.playID];
+        const play = playFor(perf);
         let thisAmount = amountFor(play, perf);
 
         // add volume credits
@@ -44,6 +44,10 @@ function statement (invoice, plays) {
     result += `Amount owed is ${format(totalAmount/100)}\n`;
     result += `You earned ${volumeCredits} credits\n`;
     return result;
+
+    function playFor (perf) {
+        return plays[perf.playID];
+    }
 }
 
 module.exports = statement;

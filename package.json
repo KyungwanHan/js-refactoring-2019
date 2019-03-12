@@ -1,18 +1,15 @@
 {
-  "name": "refactoring0305",
+  "name": "refactor",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "directories": {
-    "doc": "doc"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "mocha": "^6.0.2"
+    "mocha": "^5.2.0",
+    "nyc": "^13.1.0"
   }
 }

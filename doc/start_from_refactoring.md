@@ -128,7 +128,7 @@ It’s my coding standard to always call the return value from a function “res
 
 ```js
 function amountFor(play, perf) {
-    let result = 0;
+    let result = 0; // <<< thisAmount to result
     switch (play.type) {
         case "tragedy":
             result = 40000;
@@ -158,6 +158,34 @@ Rename Parameter
 - New name : aPerformance
 Again, this is following my coding style. With a dynamically typed language such as JavaScript, it’s useful to keep track of types—hence, my default name for a parameter includes the type name. I use an indefinite article with it unless there is some specific role information to capture in the name. I learned this convention from Kent Beck [Beck SBPP]and continue to find it helpful.
 Is this renaming worth the effort? Absolutely. Good code should clearly communicate what it is doing, and variable names are a key to clear code.
+```
+
+---
+
+```js
+function amountFor (play, aPerformance) {
+    let result = 0;
+
+    switch (play.type) {
+        case "tragedy":
+            result = 40000;
+            if (aPerformance.audience > 30) {
+                result += 1000 * (aPerformance.audience - 30);
+            }
+            break;
+        case "comedy":
+            result = 30000;
+            if (aPerformance.audience > 20) {
+                result += 10000 + 500 * (aPerformance.audience - 20);
+            }
+            result += 300 * aPerformance.audience;
+            break;
+        default:
+            throw new Error(`unknown type: ${ play.type }`);
+    }
+    return result;
+}
+
 ```
 
 # Compile-Test-Commit

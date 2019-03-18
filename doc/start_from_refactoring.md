@@ -661,74 +661,203 @@ result += `Amount owed is ${usd(totalAmount())}\n`; result += `You earned ${tota
 ---
 
 
+### SPLITTING THE PHASES OF CALCULATION AND FORMATTING
 
-  SPLITTING THE PHASES OF CALCULATION AND FORMATTING
 So far, my refactoring has focused on so that and . This is often the case early in refactoring.
 is important, as is naming things well. Now, I can begin to focus more on the functionality change I want to make—specifically, providing an HTML version of this statement. In many ways, it’s now much easier to do. With all the calculation code split out, all I have to do is write an HTML version of the seven lines of code at the top. The problem is that these broken-out functions are nested within the textual statement method, and I don’t want to copy and paste them into a new function, however well organized. I want the same calculation functions to be used by the text and HTML versions of the statement.
+
 Adding enough structure to the function ( Breaking down the complicated structures into small pieces )
 - I can understand
 - I can see the logic
+
 Functionality change
 - provide HTML version of statement
-    adding enough structure to the function
-I can understand it
-see it in terms
-  of its logical parts
-Breaking down complicated chunks into small
-  pieces
 
-  Split Phase
+---
+
+### Split Phase
+
 There are various ways to do this, but one of my favorite techniques is Split Phase (154). My aim here is to divide the logic into two parts: one that calculates the data required for the statement, the other that renders it into text or HTML. The first phase creates an intermediate data structure that it passes to the second.
 - First Phase : Calculate the data required for the statement
 - Second Phase : Renders the calculated data into text or HTML
+
 I start a Split Phase (154) by applying Extract Function (106) to the code that makes up the second phase. In this case, that’s the statement printing code, which is in fact the entire content of statement. This, together with all the nested functions, goes into its own top-level function which I call renderPlainText.
+
+---
        
-  Extract Function
-function statement (invoice, plays) { return renderPlainText(invoice, plays);
+### Extract Function
+
+~~~js
+function statement (invoice, plays) { return renderPlainText(invoice, plays);  // Extract Method
+function totalAmount() {}
+...
+}
+~~~
+
+~~~js
 function renderPlainText(invoice, plays) {
 let result = `Statement for ${invoice.customer}\n`; for (let perf of invoice.performances) {
 // print line for this order
 result += ` ${playFor(perf).name}: ${usd(amountFor(perf))} (${perf.audience} seats)\n`; }
 result += `Amount owed is ${usd(totalAmount())}\n`; result += `You earned ${totalVolumeCredits()} credits\n`; return result;
 }
- 
-  Compile-Test-Commit
+~~~
 
-   I now examine the other arguments used by renderPlainText. I want to move the data that comes from them into the intermediate data structure, so that all the calculation code moves into the statement function and renderPlainText operates solely on data passed to it through the data parameter.
+---
+
+### Move Functions : statement → renderPlainText
+
+~~~js
+function statement (invoice, plays) {
+   return renderPlainText(invoice, plays);
+}
+
+function renderPlainText(invoice,plays) {
+       let result = `Statement for ${invoice.customer}\n`;
+       for (let perf of invoice.performances) {
+
+           // print line for this order
+           result += `  ${playFor(perf).name}: ${usd(amountFor(perf))} (${perf.audience} seats)\n`;
+       }
+
+       result += `Amount owed is ${usd(totalAmount())}\n`;
+       result += `You earned ${totalVolumeCredits()} credits\n`;
+       return result;
+   }
+
+   function totalAmount() {} 
+   ….
+}
+~~~
+
+---
+
+### Compile-Test-Commit
+
+---
+
+I now examine the other arguments used by renderPlainText. I want to move the data that comes from them into the intermediate data structure, so that all the calculation code moves into the statement function and renderPlainText operates solely on data passed to it through the data parameter.
+
 My first move is to take the customer and add it to the intermediate object (compile-test-commit).
 
-   function totalAmount() {
-  let result = 0;
-  for (let perf of data.performances) {
-    result += amountFor(perf);
-  }
-  return result;
-}
-function totalVolumeCredits() {
-  let result = 0;
-  for (let perf of data.performances) {
-    result += volumeCreditsFor(perf);
-  }
-  return result;
+- All calculation code  -> statement
+- Render code -> renderPlainText
+
+---
+
+### Change Method Signature
+
+~~~js
+function statement (invoice, plays) {
+  const statementData = {};
+  return renderPlainText(statementData, invoice, plays);
 }
 
-   Now I’d like the play name to come from the intermediate data. To do this, I need to enrich the performance record with data from the play (compile-test-commit).
+function renderPlainText(statementData, invoice, plays) {
+  let result = `Statement for ${invoice.customer}\n`;
+  
+  for (let perf of invoice.performances) {
+    result += `  ${playFor(perf).name}: ${usd(amountFor(perf))} (${perf.audience} seats)\n`;
+  }
+  result += `Amount owed is ${usd(totalAmount())}\n`;
+  result += `You earned ${totalVolumeCredits()} credits\n`;
+  return result;
+~~~
+
+---
+
+### Add customer to statementData
+~~~js
+function statement (invoice, plays) {
+  const statementData = {};
+  statementData.customer = invoice.customer;
+  return renderPlainText(statementData, invoice, plays);
+}
+
+function renderPlainText(statementData, invoice, plays) {
+  let result = `Statement for ${data.customer}\n`;
+  
+  for (let perf of invoice.performances) {
+    result += `  ${playFor(perf).name}: ${usd(amountFor(perf))} (${perf.audience} seats)\n`;
+  }
+  result += `Amount owed is ${usd(totalAmount())}\n`;
+  result += `You earned ${totalVolumeCredits()} credits\n`;
+  return result;
+~~~
+
+---
+
+### Add performances to statmentData
+~~~js
+function statement (invoice, plays) {
+  const statementData = {};
+  statementData.customer = invoice.customer;
+  statementData.performances = invoice.performances;
+  return renderPlainText(statementData, invoice, plays);
+}
+
+function renderPlainText(data, invoice, plays) {
+  let result = `Statement for ${data.customer}\n`;
+  
+  for (let perf of data.performances) {
+    result += `  ${playFor(perf).name}: ${usd(amountFor(perf))} (${perf.audience} seats)\n`;
+  }
+  result += `Amount owed is ${usd(totalAmount())}\n`;
+  result += `You earned ${totalVolumeCredits()} credits\n`;
+  return result;
+~~~
+
+---
+
+### Change Method Signature(Remove 'invoice')
+~~~js
+function statement (invoice, plays) {
+  const statementData = {};
+  statementData.customer = invoice.customer;
+  statementData.performances = invoice.performances;
+  return renderPlainText(statementData, plays);
+}
+
+function renderPlainText(data, plays) {
+  let result = `Statement for ${data.customer}\n`;
+  
+  for (let perf of data.performances) {
+    result += `  ${playFor(perf).name}: ${usd(amountFor(perf))} (${perf.audience} seats)\n`;
+  }
+~~~
+
+---
+
+### Enrich the performance record 
+Now I’d like the play name to come from the intermediate data. To do this, I need to enrich the performance record with data from the play (compile-test-commit).
+
+I don’t want to modify the data passed into the funciton. I prefer to treat data as immutable as much as I can—mutable state quickly becomes something rotten.
+
+The idiom result = Object.assign({}, aPerformance) looks very odd to people unfamiliar to JavaScript. It performs a shallow copy.
+
+~~~js
 function statement (invoice, plays) {
 const statementData = {};
 statementData.customer = invoice.customer;
 statementData.performances = invoice.performances.map(enrichPerformance);
 return renderPlainText(statementData, plays);
+
 function enrichPerformance(aPerformance) { const result = Object.assign({}, aPerformance); return result;
 }
 }
+~~~
 
-    At the moment, I’m just making a copy of the performance object, but I’ll shortly add data to this new record. I take a copy because I don’t want to modify the data passed into the function. I prefer to treat data as immutable as much as I can—mutable state quickly becomes something rotten.
-The idiom result = Object.assign({}, aPerformance) looks very odd to people unfamiliar to JavaScript. It performs a shallow copy. I’d prefer to have a function for this, but it’s one of those cases where the idiom is so baked into JavaScript usage that writing my own function would look out of place for JavaScript programmers.
-   
-  Compile-Test-Commit
+---
 
-  Move Function
+### Compile-Test-Commit
+
+---
+
+### Move Function
+
 Now I have a spot for the play, I need to add it. To do that, I need to apply Move Function(198) to playFor and statement (compile-test-commit).
+
+~~~js
 function statement (invoice, plays) {
 const statementData = {};
 statementData.customer = invoice.customer;
@@ -739,35 +868,71 @@ return result;
 }
 function playFor(perf) { return plays[perf.playID]
 } }
-   
-  Make an intermediate function
+
+~~~
+
+---
+
+### Make an intermediate function
+
+~~~js
 function renderPlainText(data, plays) {
 let result = `Statement for ${data.customer}\n`; for (let perf of data.performances) {
 // print line for this order
 result += ` ${playFor(perf).name}: ${usd(amountFor(perf))} (${perf.audience} seats)\n`; }
 result += `Amount owed is ${usd(totalAmount())}\n`; result += `You earned ${totalVolumeCredits()} credits\n`; return result;
-function playFor(aPerformance) { return aPerformance.play;
-}
- 
-  Compile-Test-Commit
 
-  Inline playFor
+function playFor(aPerformance) { 
+    return aPerformance.play;
+}
+
+
+function totalAmount() {
+    let result = 0;
+    for (let perf of data.performance) {
+    result += amountFor(perf)
+    
+~~~
+
+---
+ 
+### Compile-Test-Commit
+
+---
+
+### Inline playFor
+
+~~~js
 function renderPlainText(data, plays) {
 let result = `Statement for ${data.customer}\n`; for (let perf of data.performances) {
 // print line for this order
 result += ` ${perf.play.name}: ${usd(amountFor(perf))} (${perf.audience} seats)\n`; }
-result += `Amount owed is ${usd(totalAmount())}\n`; result += `You earned ${totalVolumeCredits()} credits\n`; return result;
- 
-  Compile-Test-Commit
+result += `Amount owed is ${usd(totalAmount())}\n`; result += `You earned ${totalVolumeCredits()} credits\n`; 
+return result;
 
-  Move amountFor
+function totlaAmount() {
+    let result = 0;
+~~~
+
+---
+
+### Compile-Test-Commit
+
+---
+
+### Move amountFor
+~~~js
 function enrichPerformance(aPerformance) { const result = Object.assign({}, aPerformance); result.play = playFor(aPerformance); result.amount = amountFor(result);
 return result; }
 function amountFor(aPerformance) { let result = 0;
 let play = aPerformance.play;
 ...
- 
-  Make an intermediate function amountFor
+~~~
+
+---
+
+### Make an intermediate function amountFor
+~~~js
 function renderPlainText(data, plays) {
 let result = `Statement for ${data.customer}\n`; for (let perf of data.performances) {
 // print line for this order
@@ -775,7 +940,9 @@ result += ` ${perf.play.name}: ${usd(amountFor(perf))} (${perf.audience} seats)\
 result += `Amount owed is ${usd(totalAmount())}\n`; result += `You earned ${totalVolumeCredits()} credits\n`; return result;
 function amountFor(aPerformance) { return aPerformance.amount;
 }
- 
+~~~
+
+---
   Compile-Test-Commit
 
   Inline an intermediate function - amountFor

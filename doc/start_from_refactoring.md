@@ -220,7 +220,7 @@ Function Statement 로 뺐을 시 원하는 함수 시그니처가 안나온다�
 
 ---
 
-Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
@@ -246,15 +246,19 @@ function playFor(perf) { return plays[perf.playID]
 ```
 ---
 
-### Inline local variable
+# Inline local variable
 
 ---
 
 # Compile-Test-Commit
 
 ---
+# Change Method signature 
+- Remove parameter
 
-```js
+# Add play manually
+
+~~~js
  
 function amountFor(aPerformance, play) { let result = 0;
 let play = playFor(aPerformance);
@@ -271,13 +275,7 @@ result += 300 * aPerformance.audience;
 break; default:
 throw new Error(`unknown type: ${play.type}`); }
 return result; }
-```
-
-
-
-### Change Method signature 
-- Remove parameter
-### Add play manually
+~~~
 
 ---
 
@@ -285,7 +283,7 @@ return result; }
 
 ---
 
-```js
+~~~js
 function statement (invoice, plays) {
 let totalAmount = 0;
 let volumeCredits = 0;
@@ -300,19 +298,18 @@ if ("comedy" === playFor(perf).type) volumeCredits += Math.floor(perf.audience /
 result += ` ${playFor(perf).name}: ${format(thisAmount/100)} (${perf.audience} seats)\n`;
 totalAmount += thisAmount; }
 result += `Amount owed is ${format(totalAmount/100)}\n`; result += `You earned ${volumeCredits} credits\n`; return result;
-```
+~~~
 
 ---
 
-```
 This refactoring alarms some programmers. Previously, the code to look up the play was executed once in each loop iteration; now, it’s executed thrice. I’ll talk about the interplay of refactoring and performance later, but for the moment I’ll just observe that this change is unlikely to significantly affect performance, and even if it were, it is much easier to improve the performance of a well-factored code base.
 The great benefit of removing local variables is that it makes it much easier to do extractions, since there is less local scope to deal with. Indeed, usually I’ll take out local variables before I do any extractions.
 Now that I’m done with the arguments to amountFor, I look back at where it’s called. It’s being used to set a temporary variable that’s not updated again, so I apply Inline Variable(123).
-```
+
 ---
     
-### Inline local variable
-```js
+# Inline local variable
+~~~js
 function statement (invoice, plays) {
 let totalAmount = 0;
 let volumeCredits = 0;
@@ -327,15 +324,15 @@ if ("comedy" === playFor(perf).type) volumeCredits += Math.floor(perf.audience /
 result += ` ${playFor(perf).name}: ${format(amountFor(perf)/100)} (${perf.audience} seats)\n`;
 totalAmount += amountFor(perf); }
 result += `Amount owed is ${format(totalAmount/100)}\n`; result += `You earned ${volumeCredits} credits\n`; return result;
-```
+~~~
 
 ---
 
-Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-```js
+~~~js
 function statement (invoice, plays) {
 let totalAmount = 0;
 let volumeCredits = 0;
@@ -350,30 +347,30 @@ if ("comedy" === playFor(perf).type) volumeCredits += Math.floor(perf.audience /
 result += ` ${playFor(perf).name}: ${format(amountFor(perf)/100)} (${perf.audience} seats)\n`;
 totalAmount += amountFor(perf); }
 result += `Amount owed is ${format(totalAmount/100)}\n`; result += `You earned ${volumeCredits} credits\n`; return result;
-```
+~~~
 
 ---
 
-### Extract Method
+# Extract Method
 - Name: volumeCreditsFor(perf)
 
-### Find your optimal refactoring sequence
+# Find your optimal refactoring sequence
 - How long?
 - How many manual refactoring?
 - How many typing?
 
 ---
-### Extract Variable
+# Extract Variable
 - Name: volumeCredits
 
-```js
+~~~js
 function volumeCreditsFor(perf) {
 let volumeCredits = 0;
 volumeCredits += Math.max(perf.audience - 30, 0);
 // add extra credit for every ten comedy attendees
 if ("comedy" === playFor(perf).type) volumeCredits += Math.floor(perf.audience / 5); return volumeCredits;
 }
-```
+~~~
 
 Now I get the benefit from removing the play variable as it makes it easier to extract the volume credits calculation by removing one of the locally scoped variables.
 
@@ -388,7 +385,7 @@ I remove the unnecessary (and, in this case, downright misleading) comment.
 ---
 
 
-### Refactor volumeCreditsFor like this
+# Refactor volumeCreditsFor like this
 Rename Variable
 - volumeCredits → result
 
@@ -412,11 +409,11 @@ if ("comedy" === playFor(aPerformance).type) result += Math.floor(aPerformance.a
 
 ---
   
-Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### Removing the format variable
+# Removing the format variable
 As I suggested before, temporary variables can be a problem. They are only useful within their own routine, and therefore they encourage long, complex routines. My next move, then, is to replace some of them. The easiest one is format. This is a case of assigning a function to a temp, which I prefer to replace with a declared function.
 
 ~~~js
@@ -434,7 +431,7 @@ totalAmount += amountFor(perf); }
 result += `Amount owed is ${format(totalAmount/100)}\n`; result += `You earned ${volumeCredits} credits\n`; return result;
 ~~~
 
-### Manual Refactoring 
+# Manual Refactoring 
 
 ~~~js
 function format(aNumber) {
@@ -445,11 +442,11 @@ return new Intl.NumberFormat("en-US",
 
 ---
 
-Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### What's left in function 'statement'
+# What's left in function 'statement'
 ~~~js
 function statement (invoice, plays) {
    let totalAmount = 0;
@@ -470,7 +467,7 @@ function statement (invoice, plays) {
 
 ---
 
-### Change Function Declaration
+# Change Function Declaration
 Although changing a function variable to a declared function is a refactoring, I haven’t named it and included it in the catalog. There are many refactorings that I didn’t feel important enough for that. This one is both simple to do and relatively rare, so I didn’t think it was worthwhile.
 
 I’m not keen on the name—“format” doesn’t really convey enough of what it’s doing. “formatAsUSD” would be a bit too long-winded since it’s being used in a string template, particularly within this small scope. I think the fact that it’s formatting a currency amount is the thing to highlight here, so I pick a name that suggests that and apply Change Function Declaration (124).
@@ -481,7 +478,7 @@ As I’m changing the name, I also move the duplicated division by 100 into the 
 
 ---
 
-### Move Duplicated division
+# Move Duplicated division
 
 ~~~js
 function statement (invoice, plays) {
@@ -511,11 +508,11 @@ style: "currency", currency: "USD", minimumFractionDigits: 2
 
 ---
 
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
    
-### Removing Total Volume Credits
+# Removing Total Volume Credits
 
 ~~~js
 function statement (invoice, plays) {
@@ -531,11 +528,11 @@ result += `Amount owed is ${usd(totalAmount)}\n`; result += `You earned ${volume
 
 ---
 
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### Split Loop
+# Split Loop
 
 ~~~js
 function statement (invoice, plays) {
@@ -553,11 +550,11 @@ result += `Amount owed is ${usd(totalAmount)}\n`; result += `You earned ${volume
 
 ---
    
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### Slide Statement
+# Slide Statement
 
 ~~~js 
 function statement (invoice, plays) {
@@ -575,11 +572,11 @@ result += `Amount owed is ${usd(totalAmount)}\n`; result += `You earned ${volume
 
 ---
      
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### Extract Function
+# Extract Function
 
 Gathering together everything that updates the volumeCredits variable makes it easier to do Replace Temp with Query (178). As before, the first step is to apply Extract Function(106) to the overall calculation of the variable.
 
@@ -592,11 +589,11 @@ return volumeCredits; }
 
 ---
 
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### Inline volumeCredits
+# Inline volumeCredits
 
 ~~~js
 function statement (invoice, plays) {
@@ -620,23 +617,20 @@ So, my overall advice on performance with refactoring is: Most of the time you s
 
 ---
 
-### Small steps at a time → Baby Step
+# Small steps at a time → Baby Step
 
 The second aspect I want to call your attention to is how small the steps were to remove volumeCredits. Here are the four steps, each followed by compiling, testing, and committing to my local source code repository:
 
-● Split Loop (227) to isolate the accumulation
-
-● Slide Statements (223) to bring the initializing code next to the accumulation
-
-● Extract Function (106) to create a function for calculating the total
-
-● Inline Variable (123) to remove the variable completely
+- Split Loop (227) to isolate the accumulation
+- Slide Statements (223) to bring the initializing code next to the accumulation
+- Extract Function (106) to create a function for calculating the total
+- Inline Variable (123) to remove the variable completely
 
 I confess I don’t always take quite as short steps as these—but whenever things get difficult, my first reaction is to take shorter steps. In particular, should a test fail during a refactoring, if I can’t immediately see and fix the problem, I’ll revert to my last good commit and redo what I just did with smaller steps. That works because I commit so frequently and because small steps are the key to moving quickly, particularly when working with difficult code.
 
 ---
         
-### Remove totalAmount
+# Remove totalAmount
 
 I then repeat that sequence to remove totalAmount. I start by splitting the loop (compile-test-commit), then I slide the variable initialization (compile-test-commit), and then I extract the function. There is a wrinkle here: The best name for the function is “totalAmount”, but that’s the name of the variable, and I can’t have both at the same time. So I give the new function a random name when I extract it (and compile-test-commit).
 
@@ -644,7 +638,7 @@ totalAmount 에도 totalVolumeCredits 와 동일한 리팩토링을 적용한다
 
 ---
 
-### Refactored Code
+# Refactored Code
 
 ~~~js
 function statement (invoice, plays) {
@@ -656,12 +650,12 @@ result += `Amount owed is ${usd(totalAmount())}\n`; result += `You earned ${tota
 
 ---
 
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
 
-### SPLITTING THE PHASES OF CALCULATION AND FORMATTING
+# SPLITTING THE PHASES OF CALCULATION AND FORMATTING
 
 So far, my refactoring has focused on so that and . This is often the case early in refactoring.
 is important, as is naming things well. Now, I can begin to focus more on the functionality change I want to make—specifically, providing an HTML version of this statement. In many ways, it’s now much easier to do. With all the calculation code split out, all I have to do is write an HTML version of the seven lines of code at the top. The problem is that these broken-out functions are nested within the textual statement method, and I don’t want to copy and paste them into a new function, however well organized. I want the same calculation functions to be used by the text and HTML versions of the statement.
@@ -675,7 +669,7 @@ Functionality change
 
 ---
 
-### Split Phase
+# Split Phase
 
 There are various ways to do this, but one of my favorite techniques is Split Phase (154). My aim here is to divide the logic into two parts: one that calculates the data required for the statement, the other that renders it into text or HTML. The first phase creates an intermediate data structure that it passes to the second.
 - First Phase : Calculate the data required for the statement
@@ -685,7 +679,7 @@ I start a Split Phase (154) by applying Extract Function (106) to the code that 
 
 ---
        
-### Extract Function
+# Extract Function
 
 ~~~js
 function statement (invoice, plays) { return renderPlainText(invoice, plays);  // Extract Method
@@ -705,7 +699,7 @@ result += `Amount owed is ${usd(totalAmount())}\n`; result += `You earned ${tota
 
 ---
 
-### Move Functions : statement → renderPlainText
+# Move Functions : statement → renderPlainText
 
 ~~~js
 function statement (invoice, plays) {
@@ -732,7 +726,7 @@ function renderPlainText(invoice,plays) {
 
 ---
 
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
@@ -745,7 +739,7 @@ My first move is to take the customer and add it to the intermediate object (com
 
 ---
 
-### Change Method Signature
+# Change Method Signature
 
 ~~~js
 function statement (invoice, plays) {
@@ -766,7 +760,8 @@ function renderPlainText(statementData, invoice, plays) {
 
 ---
 
-### Add customer to statementData
+# Add customer to statementData
+
 ~~~js
 function statement (invoice, plays) {
   const statementData = {};
@@ -787,7 +782,7 @@ function renderPlainText(statementData, invoice, plays) {
 
 ---
 
-### Add performances to statmentData
+# Add performances to statmentData
 ~~~js
 function statement (invoice, plays) {
   const statementData = {};
@@ -809,7 +804,7 @@ function renderPlainText(data, invoice, plays) {
 
 ---
 
-### Change Method Signature(Remove 'invoice')
+# Change Method Signature(Remove 'invoice')
 ~~~js
 function statement (invoice, plays) {
   const statementData = {};
@@ -828,7 +823,7 @@ function renderPlainText(data, plays) {
 
 ---
 
-### Enrich the performance record 
+# Enrich the performance record 
 Now I’d like the play name to come from the intermediate data. To do this, I need to enrich the performance record with data from the play (compile-test-commit).
 
 I don’t want to modify the data passed into the funciton. I prefer to treat data as immutable as much as I can—mutable state quickly becomes something rotten.
@@ -849,11 +844,11 @@ function enrichPerformance(aPerformance) { const result = Object.assign({}, aPer
 
 ---
 
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### Move Function
+# Move Function
 
 Now I have a spot for the play, I need to add it. To do that, I need to apply Move Function(198) to playFor and statement (compile-test-commit).
 
@@ -873,7 +868,7 @@ function playFor(perf) { return plays[perf.playID]
 
 ---
 
-### Make an intermediate function
+# Make an intermediate function
 
 ~~~js
 function renderPlainText(data, plays) {
@@ -896,11 +891,11 @@ function totalAmount() {
 
 ---
  
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### Inline playFor
+# Inline playFor
 
 ~~~js
 function renderPlainText(data, plays) {
@@ -916,11 +911,11 @@ function totlaAmount() {
 
 ---
 
-### Compile-Test-Commit
+# Compile-Test-Commit
 
 ---
 
-### Move amountFor
+# Move amountFor
 ~~~js
 function enrichPerformance(aPerformance) { const result = Object.assign({}, aPerformance); result.play = playFor(aPerformance); result.amount = amountFor(result);
 return result; }
@@ -931,7 +926,7 @@ let play = aPerformance.play;
 
 ---
 
-### Make an intermediate function amountFor
+# Make an intermediate function amountFor
 ~~~js
 function renderPlainText(data, plays) {
 let result = `Statement for ${data.customer}\n`; for (let perf of data.performances) {
